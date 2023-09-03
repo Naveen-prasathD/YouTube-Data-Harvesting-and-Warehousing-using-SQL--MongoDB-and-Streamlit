@@ -1,0 +1,467 @@
+import requests
+API_KEY = 'AIzaSyCY4FqRvw2zg-hfmg3vOeWkbUH3pqWPJ0U'
+
+def get_channel_data(channel_id):
+    base_url = 'https://www.googleapis.com/youtube/v3/channels'
+    params = {
+        'part': 'snippet,statistics',
+        'id': channel_id,
+        'key': API_KEY
+    }
+
+    response = requests.get(base_url, params=params)
+    data = response.json()
+
+    if 'items' in data and len(data['items']) > 0:
+        channel_info = data['items'][0]
+        snippet = channel_info['snippet']
+        statistics = channel_info['statistics']
+
+        channel_data = {
+            'channel_id': channel_id,
+            'channel_name': snippet['title'],
+            'channel_description': snippet['description'],
+            'subscriber_count': statistics['subscriberCount'],
+            'channel_views': statistics['viewCount']
+        }
+
+        return channel_data
+    else:
+        return None
+
+
+def get_video_data(video_id):
+    base_url = 'https://www.googleapis.com/youtube/v3/videos'
+    params = {
+        'part': 'snippet,statistics,contentDetails',
+        'id': video_id,
+        'key': API_KEY
+    }
+
+    response = requests.get(base_url, params=params)
+    data = response.json()
+
+    if 'items' in data and len(data['items']) > 0:
+        video_info = data['items'][0]
+        snippet = video_info['snippet']
+        statistics = video_info['statistics']
+        content_details = video_info['contentDetails']
+
+        video_data = {
+            'video_id': video_id,
+            'video_name': snippet['title'],
+            'video_description': snippet['description'],
+            'tags': snippet.get('tags', []),
+            'publish_date': snippet['publishedAt'],
+            'View_count': statistics['viewCount'],
+            'like_count': statistics.get('likeCount', 0),
+            'dislike_count': statistics.get('dislikeCount', 0),
+            'favorite_count': statistics.get('favoriteCount', 0),
+            'comment_count': statistics.get('commentCount', 0),
+            'duration': content_details['duration'],
+            'thumbnail_url': snippet['thumbnails']['default']['url']
+        }
+
+        return video_data
+    else:
+        return None
+
+
+def get_video_comments(video_id):
+    base_url = 'https://www.googleapis.com/youtube/v3/commentThreads'
+    params = {
+        'part': 'snippet',
+        'videoId': video_id,
+        'key': API_KEY
+    }
+
+    response = requests.get(base_url, params=params)
+    data = response.json()
+
+    comments = []
+
+    if 'items' in data:
+        for comment in data['items']:
+            snippet = comment['snippet']['topLevelComment']['snippet']
+            comments.append({
+                'comment_id': comment['id'],
+                'comment_text': snippet['textDisplay'],
+                'comment_author': snippet['authorDisplayName'],
+                'comment_publish_date': snippet['publishedAt']
+            })
+
+    return comments
+
+
+def get_channel_playlists(channel_id):
+    base_url = 'https://www.googleapis.com/youtube/v3/playlists'
+    params = {
+        'part': 'snippet',
+        'channelId': channel_id,
+        'maxResults': 10,
+        'key': API_KEY
+    }
+
+    response = requests.get(base_url, params=params)
+    data = response.json()
+
+    playlists = []
+
+    if 'items' in data:
+        for playlist in data['items']:
+            playlists.append({
+                'playlist_id': playlist['id'],
+                'playlist_title': playlist['snippet']['title']
+            })
+
+    return playlists
+
+
+if __name__ == "__main__":
+    channel_id = 'UCueYcgdqos0_PzNOq81zAFg'
+    video_id = 'ansD5Fjjc3Y'
+
+    channel_data = get_channel_data(channel_id)
+    video_data = get_video_data(video_id)
+    video_comments = get_video_comments(video_id)
+    playlists = get_channel_playlists(channel_id)
+
+    if channel_data and video_data:
+        print("Channel Name:", channel_data['channel_name'])
+        print("Channel ID:", channel_data['channel_id'])
+        print("Subscriber Count:", channel_data['subscriber_count'])
+        print("Channel Views:", channel_data['channel_views'])
+        print("Channel Description:", channel_data['channel_description'])
+
+        print("\nVideo Name:", video_data['video_name'])
+        print("Video ID:", video_data['video_id'])
+        print("Video Description:", video_data['video_description'])
+        print("Tags:", ", ".join(video_data['tags']))
+        print("Publish Date:", video_data['publish_date'])
+        print("View Count:", video_data['View_count'])
+        print("Like Count:", video_data['like_count'])
+        print("Dislike Count:", video_data['dislike_count'])
+        print("Favorite Count:", video_data['favorite_count'])
+        print("Comment Count:", video_data['comment_count'])
+        print("Duration:", video_data['duration'])
+        print("Thumbnail URL:", video_data['thumbnail_url'])
+
+        if video_comments:
+            print("\nVideo Comments:")
+            for comment in video_comments:
+                print("Comment ID:", comment['comment_id'])
+                print("Comment Text:", comment['comment_text'])
+                print("Comment Author:", comment['comment_author'])
+                print("Comment Publish Date:", comment['comment_publish_date'])
+        else:
+            print("No comments found for the video.")
+
+        if playlists:
+            print("\nPlaylists:")
+            for playlist in playlists:
+                print("Playlist ID:", playlist['playlist_id'])
+                print("Playlist Title:", playlist['playlist_title'])
+        else:
+            print("No playlists found for the channel.")
+    else:
+        print("Channel or video data not found.")
+
+#STORE DATA TO MONGODB
+
+import requests
+from pymongo import MongoClient
+from pymongo.mongo_client import MongoClient
+
+uri = "mongodb+srv://naveenprasath024:Naveenatlas26@cluster0.l8lc35o.mongodb.net/?retryWrites=true&w=majority"
+
+# Create a new client and connect to the server
+client = MongoClient(uri)
+API_KEY = 'AIzaSyCY4FqRvw2zg-hfmg3vOeWkbUH3pqWPJ0U'
+
+# Send a ping to confirm a successful connection
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
+
+# Connect to MongoDB
+client = MongoClient('mongodb://localhost:27017/')
+# Access a specific database
+db = client.get_database("youtube_data")
+
+db = client['youtube_data']
+channel_collection = db['channels']
+video_collection = db['videos']
+comment_collection = db['comments']
+playlist_collection = db['playlists']
+
+
+def save_channel_data(channel_data):
+    channel_collection.insert_one(channel_data)
+
+
+def save_video_data(video_data):
+    video_collection.insert_one(video_data)
+
+
+def save_comments_data(video_id, comments_data):
+    comment_collection.insert_many(comments_data)
+
+
+def save_playlist_data(playlist_data):
+    playlist_collection.insert_one(playlist_data)
+
+
+if __name__ == "__main__":
+    channel_id = 'UCueYcgdqos0_PzNOq81zAFg'
+    video_id = 'ansD5Fjjc3Y'
+
+    channel_data = get_channel_data(channel_id)
+    video_data = get_video_data(video_id)
+    video_comments = get_video_comments(video_id)
+    playlists = get_channel_playlists(channel_id)
+
+    if channel_data:
+        save_channel_data(channel_data)
+
+    if video_data:
+        save_video_data(video_data)
+
+    if video_comments:
+        save_comments_data(video_id, video_comments)
+
+    if playlists:
+        for playlist in playlists:
+            save_playlist_data(playlist)
+
+    print("Data saved to MongoDB.")
+
+#MIGRATE DATA TO MYSQL
+
+import pymongo
+import mysql.connector
+#from datetime import datetime
+
+# MongoDB connection
+mongo_client = pymongo.MongoClient('mongodb://localhost:27017/')
+mongo_db = mongo_client['youtube_data']
+mongo_channel_collection = mongo_db['channels']
+mongo_video_collection = mongo_db['videos']
+mongo_comment_collection = mongo_db['comments']
+mongo_playlist_collection = mongo_db['playlists']
+
+# MySQL connection
+mysql_conn = mysql.connector.connect(
+    host='127.0.0.1',
+    user='root',
+    password='@Naveenmysql26',
+    database='youtube_data'
+)
+mysql_cursor = mysql_conn.cursor()
+
+# Migrate Channel Data
+for channel in mongo_channel_collection.find():
+    # Insert channel data into MySQL
+    insert_query = "INSERT INTO channels (channel_id, channel_name, channel_views, channel_description) VALUES (%s, %s, %s, %s)"
+    mysql_cursor.execute(insert_query, (
+        channel['channel_id'],
+        channel['channel_name'],
+       #channel['subscriber_count'],
+        channel['channel_views'],
+        channel['channel_description']
+    ))
+
+# Similarly, migrate Video Data, Comment Data, and Playlist Data
+for video in mongo_video_collection.find():
+    # Insert video data into MySQL
+    insert_query = "INSERT INTO videos (video_id, video_name, video_description) VALUES (%s,%s, %s)"
+    mysql_cursor.execute(insert_query, (
+        video['video_id'],
+        video['video_name'],
+        video['video_description'],
+        #','.join(video['tags']),
+        #video['publish_date'],
+        #video['view_count'],
+        #video['like_count'],
+        #video['dislike_count'],
+        #video['favorite_count'],
+        #video['comment_count'],
+        #video['duration'],
+        #video['thumbnail_url']
+    ))
+
+for comment in mongo_comment_collection.find():
+    # Insert comment data into MySQL
+    insert_query = "INSERT INTO comments (comment_id, comment_text, comment_author) VALUES (%s, %s, %s)"
+    mysql_cursor.execute(insert_query, (
+        comment['comment_id'],
+        #comment['video_id'],
+        comment['comment_text'],
+        comment['comment_author']
+    ))
+
+for playlist in mongo_playlist_collection.find():
+    # Insert playlist data into MySQL
+    insert_query = "INSERT INTO playlists (playlist_id, playlist_title) VALUES (%s, %s)"
+    mysql_cursor.execute(insert_query, (
+        playlist['playlist_id'],
+        playlist['playlist_title']
+    ))
+
+# Commit changes and close MySQL connection
+mysql_conn.commit()
+mysql_cursor.close()
+mysql_conn.close()
+
+print("Data migrated to MySQL.")
+
+#QUERY PART
+
+import mysql.connector
+import pandas as pd
+import streamlit as st
+
+# Function to execute a query and return the result as a DataFrame
+def run_query(query):
+    conn = mysql.connector.connect(
+        host='127.0.0.1',
+        user='root',
+        password='@Naveenmysql26',
+        database='youtube_data'
+    )
+    df = pd.read_sql(query, conn)
+    conn.close()
+    return df
+
+# Function to display a DataFrame as a table in Streamlit
+def display_table(dataframe):
+    st.dataframe(dataframe)
+
+# Create a Streamlit app
+st.title('YouTube Data Analysis')
+
+# Query 1: Names of all videos and their corresponding channels
+if st.button('Query 1: Names of all videos and their corresponding channels'):
+    query = """
+    SELECT videos.video_name, channels.channel_name
+    FROM videos
+    JOIN channels ON videos.channel_id = channels.channel_id;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 2: Channels with the most number of videos and how many videos they have
+if st.button('Query 2: Channels with the most number of videos and how many videos they have'):
+    query = """
+    SELECT channels.channel_name, COUNT(*) AS video_count
+    FROM channels
+    JOIN videos ON channels.channel_id = videos.channel_id
+    GROUP BY channels.channel_name
+    ORDER BY video_count DESC
+    LIMIT 1;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 3: Top 10 most viewed videos and their respective channels
+if st.button('Query 3: Top 10 most viewed videos and their respective channels'):
+    query = """
+    SELECT videos.video_name, channels.channel_name, videos.view_count
+    FROM videos
+    JOIN channels ON videos.channel_id = channels.channel_id
+    ORDER BY videos.view_count DESC
+    LIMIT 10;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Add more queries following the same structure as above...
+# Query 4: Number of comments made on each video and their corresponding video names
+if st.button('Query 4: Number of comments made on each video and their corresponding video names'):
+    query = """
+    SELECT videos.video_name, COUNT(comments.comment_id) AS comment_count
+    FROM videos
+    LEFT JOIN comments ON videos.video_id = comments.video_id
+    GROUP BY videos.video_name;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 5: Videos with the highest number of likes and their corresponding channel names
+if st.button('Query 5: Videos with the highest number of likes and their corresponding channel names'):
+    query = """
+    SELECT videos.video_name, channels.channel_name, videos.like_count
+    FROM videos
+    JOIN channels ON videos.channel_id = channels.channel_id
+    ORDER BY videos.like_count DESC
+    LIMIT 1;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 6: Total number of likes and dislikes for each video and their corresponding video names
+if st.button('Query 6: Total number of likes and dislikes for each video and their corresponding video names'):
+    query = """
+    SELECT videos.video_name, SUM(videos.like_count) AS total_likes, SUM(videos.dislike_count) AS total_dislikes
+    FROM videos
+    GROUP BY videos.video_name;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 7: Total number of views for each channel and their corresponding channel names
+if st.button('Query 7: Total number of views for each channel and their corresponding channel names'):
+    query = """
+    SELECT channels.channel_name, SUM(videos.view_count) AS total_views
+    FROM channels
+    JOIN videos ON channels.channel_id = videos.channel_id
+    GROUP BY channels.channel_name;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 8: Names of all channels that have published videos in the year 2022
+if st.button('Query 8: Names of all channels that have published videos in the year 2022'):
+    query = """
+    SELECT DISTINCT channels.channel_name
+    FROM channels
+    JOIN videos ON channels.channel_id = videos.channel_id
+    WHERE YEAR(videos.publish_date) = 2022;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 9: Average duration of all videos in each channel and their corresponding channel names
+if st.button('Query 9: Average duration of all videos in each channel and their corresponding channel names'):
+    query = """
+    SELECT channels.channel_name, AVG(videos.duration) AS avg_duration
+    FROM channels
+    JOIN videos ON channels.channel_id = videos.channel_id
+    GROUP BY channels.channel_name;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 10: Videos with the highest number of comments and their corresponding channel names
+if st.button('Query 10: Videos with the highest number of comments and their corresponding channel names'):
+    query = """
+    SELECT videos.video_name, channels.channel_name, MAX(videos.comment_count) AS max_comment_count
+    FROM videos
+    JOIN channels ON videos.channel_id = channels.channel_id;
+    """
+    df = run_query(query)
+    display_table(df)
+
+# Query 11: Show channel and video details
+if st.button('Query 11: Show channel and video details'):
+    query = """
+    SELECT channels.channel_name, channels.channel_id, channels.channel_views, channels.channel_description,
+        videos.video_id, videos.video_name, videos.video_description
+    FROM channels
+    INNER JOIN videos ON channels.channel_id = videos.channel_id
+    """
+    df = run_query(query)
+    display_table(df)
+
+st.write("You can select a query to execute from the buttons above.")
